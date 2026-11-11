@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { validateProductInput } from "@/lib/products";
 
-export default function EditProductPage() {
+//component ย่อยที่อ่าน id จาก URL และแสดงฟอร์มแก้ไขสินค้า
+//(แยกออกมาเพื่อให้ห่อด้วย Suspense ได้ เพราะ useParams ต้องรอค่า id จาก URL)
+function EditProductForm() {
   //ดึงค่า id จาก URL เช่น /products/edit/3 (ใน client component ใช้ useParams)
   const { id } = useParams<{ id: string }>();
   //ตรวจสอบว่า id เป็นตัวเลขจำนวนเต็มหรือไม่ (ถ้าไม่ใช่ จะไม่ดึงข้อมูล)
@@ -195,5 +197,14 @@ export default function EditProductPage() {
         </form>
       )}
     </main>
+  );
+}
+
+//หน้าแก้ไขสินค้า: ห่อฟอร์มด้วย Suspense และแสดงข้อความกำลังโหลดระหว่างรอ
+export default function EditProductPage() {
+  return (
+    <Suspense fallback={<p className="text-gray-500">กำลังโหลด...</p>}>
+      <EditProductForm />
+    </Suspense>
   );
 }
