@@ -8,6 +8,8 @@ import { validateProductInput } from "@/lib/products";
 export default function EditProductPage() {
   //ดึงค่า id จาก URL เช่น /products/edit/3 (ใน client component ใช้ useParams)
   const { id } = useParams<{ id: string }>();
+  //ตรวจสอบว่า id เป็นตัวเลขจำนวนเต็มหรือไม่ (ถ้าไม่ใช่ จะไม่ดึงข้อมูล)
+  const isValidId = Number.isInteger(Number(id));
   //ใช้ router สำหรับเปลี่ยนหน้าหลังบันทึกเสร็จ
   const router = useRouter();
 
@@ -19,9 +21,14 @@ export default function EditProductPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
+  //สร้าง state เก็บสถานะว่าไม่พบสินค้าตาม id นี้
+  const [notFound, setNotFound] = useState<boolean>(false);
 
   //ดึงข้อมูลสินค้าตาม id มาเติมในฟอร์มตอนเปิดหน้า
   useEffect(() => {
+    //ถ้า id ไม่ใช่ตัวเลข ไม่ต้องดึงข้อมูล
+    if (!isValidId) return;
+
     async function fetchProduct() {
       // handle ข้อผิดพลาดที่อาจจะเกิดขึ้นในการทำงาน
       try {
@@ -29,7 +36,7 @@ export default function EditProductPage() {
 
         //ตรวจสอบว่ามีสินค้านี้หรือไม่
         if (res.status === 404) {
-          setError("ไม่พบข้อมูลสินค้า");
+          setNotFound(true);
           return;
         }
         if (!res.ok) {
@@ -52,7 +59,7 @@ export default function EditProductPage() {
     }
 
     fetchProduct();
-  }, [id]);
+  }, [id, isValidId]);
 
   //บันทึกการแก้ไขสินค้า (PUT -> Update)
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -104,8 +111,19 @@ export default function EditProductPage() {
     <main className="mx-auto w-full max-w-xl px-4 py-8">
       <h1 className="mb-6 text-2xl font-bold">แก้ไขสินค้า (รหัส {id})</h1>
 
-      {/* แสดงข้อความระหว่างโหลดข้อมูล ถ้าโหลดเสร็จแล้วแสดงฟอร์ม */}
-      {loading ? (
+      {/* ถ้า id ไม่ใช่ตัวเลขหรือไม่พบสินค้า ให้แสดงข้อความและซ่อนฟอร์ม */}
+      {/* ถ้ากำลังโหลดแสดงข้อความกำลังโหลด ถ้าโหลดเสร็จแล้วแสดงฟอร์ม */}
+      {!isValidId || notFound ? (
+        <div className="flex flex-col items-start gap-4">
+          <p className="text-red-600">ไม่พบข้อมูลสินค้า</p>
+          <Link
+            href="/"
+            className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded"
+          >
+            กลับหน้าแรก
+          </Link>
+        </div>
+      ) : loading ? (
         <p className="text-gray-500">กำลังโหลด...</p>
       ) : (
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
